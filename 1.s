@@ -7,13 +7,13 @@ asm_main:
     sub rsp, 8 ; Align stack to 16 bytes (required for function calls)
 
     ; Read input with scanf
-    lea rdx, [rsp + 4] ; Address to store the first character
+    lea rdx, [rsp + 4] ; Address to store the string
     lea rsi, [rsp] ; Address to store the number
     mov rdi, scanf_format ; Address of scanf format string
     call scanf
 
     ; Load the inputs
-    mov bx, [rsp + 4] ; Load the first character into rbx
+    mov rbx, [rsp + 4] ; Load the string into rbx
     mov eax, [rsp] ; Load the number into eax
 
     ; Extract 14th-17th bits
@@ -40,6 +40,7 @@ back:
     call printf 
 
     add rsp, 8 ; Restore stack alignment
+    mov rax, 0 ; The non-error exit code
     ret ; Return from main
 
 second_ok:
@@ -62,7 +63,6 @@ second:
 first_ok:
     cmp bh, 's' ; Comparing the second character
     je second_ok 
-
 
 section .data
 scanf_format: db "%d %s", 0 ; Format string for scanf

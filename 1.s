@@ -7,26 +7,33 @@ asm_main:
     sub rsp, 8 ; Align stack to 16 bytes (required for function calls)
 
     ; Read input with scanf
+    lea rdx, [rsp + 4] ; Address to store the first character
+    lea rsi, [rsp] ; Address to store the number
     mov rdi, scanf_format ; Address of scanf format string
-    mov rsi, rsp ; Address to store input
     call scanf
 
-    ; Load the input number
-    mov rax, [rsp] ; Load the input number into eax
+    ; Load the inputs
+    mov bx, [rsp + 4] ; Load the first character into rbx
+    mov eax, [rsp] ; Load the number into eax
 
     ; Extract 14th-17th bits
-    mov rsi, rax ; Copy number to rsi
-    and rsi, 0x3C000 ; Mask 14th-17th bits (0x3C000 = 245760)
-    shr rsi, 14 ; Shift to get the value (14th bit = LSB)
+    mov esi, eax ; Copy number to rsi
+    and esi, 0x3C000 ; Mask 14th-17th bits (0x3C000 = 245760)
+    shr esi, 14 ; Shift to get the value (14th bit = LSB)
 
     ; Extract 20th-23rd bits
-    mov rdx, rax ; Copy number to rdx
-    and rdx, 0xF00000 ; Mask 20th-23rd bits (0xF00000 = 15728640)
-    shr rdx, 20 ; Shift to get the value (20th bit = LSB)
+    mov edx, eax ; Copy number to rdx
+    and edx, 0xF00000 ; Mask 20th-23rd bits (0xF00000 = 15728640)
+    shr edx, 20 ; Shift to get the value (20th bit = LSB)
 
+    ; Check the condition
+    cmp bl, '-' ; Comparing the first character
+    je first_ok
+
+back:
     ; Addition
-    mov rcx, rsi ; Copy number to rcx
-    add rcx, rdx ; Adding rdx
+    mov ecx, esi ; Copy number to rcx
+    add ecx, edx ; Adding rdx
 
     ; Print the results
     mov rdi, printf_format ; Address of printf format string
@@ -35,6 +42,28 @@ asm_main:
     add rsp, 8 ; Restore stack alignment
     ret ; Return from main
 
+second_ok:
+    ; The condition is met
+    mov rax, 8 ; Sign extetion based on the number's sign
+    and rax, rsi
+    jne first
+continue:
+    mov rax, 8
+    and rax, rdi
+end:
+    jmp back
+first:
+    add rsi, 0xFFFFFFFFFFFFFFF0
+    jmp continue
+second:
+    add rdi, 0xFFFFFFFFFFFFFFF0
+    jmp end
+        
+first_ok:
+    cmp bh, 's' ; Comparing the second character
+    je second_ok 
+
+
 section .data
-scanf_format: db "%d", 0 ; Format string for scanf
-printf_format: db "%d", 10, "%d", 10, "%d", 10, 0 ; Format string for printf
+scanf_format: db "%d %s", 0 ; Format string for scanf
+printf_format: db "%d %d %d", 10, 0 ; Format string for printf

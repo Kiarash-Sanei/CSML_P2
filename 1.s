@@ -66,4 +66,4 @@ first_ok:
 
 section .data
 scanf_format: db "%d %s", 0 ; Format string for scanf
-printf_format: db "%d %d %d", 10, 0 ; Format string for printf
+printf_format: db "%d", 10, "%d", 10, "%d", 10, 0 ; Format string for printf

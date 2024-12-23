@@ -4,7 +4,7 @@ extern scanf
 
 section .text
 asm_main:
-    sub rsp, 8 ; Align stack to 16 bytes (required for function calls)
+    sub rsp, 8 ; Align stack to 8 bytes (required for function calls)
 
     ; Read input with scanf
     lea rdx, [rsp + 4] ; Address to store the string
@@ -17,12 +17,12 @@ asm_main:
     mov eax, [rsp] ; Load the number into eax
 
     ; Extract 14th-17th bits
-    mov esi, eax ; Copy number to rsi
+    mov esi, eax ; Copy number to esi
     and esi, 0x3C000 ; Mask 14th-17th bits (0x3C000 = 245760)
     shr esi, 14 ; Shift to get the value (14th bit = LSB)
 
     ; Extract 20th-23rd bits
-    mov edx, eax ; Copy number to rdx
+    mov edx, eax ; Copy number to edx
     and edx, 0xF00000 ; Mask 20th-23rd bits (0xF00000 = 15728640)
     shr edx, 20 ; Shift to get the value (20th bit = LSB)
 
@@ -32,7 +32,7 @@ asm_main:
 
 back:
     ; Addition
-    mov ecx, esi ; Copy number to rcx
+    mov ecx, esi ; Copy number to ecx
     add ecx, edx ; Adding rdx
 
     ; Print the results

@@ -16,21 +16,17 @@ asm_main:
     ; mov rsi, rax
     ; cmp rax, 0 ; Checking the return value of scanf (that shows number of matchings)
     ; jne invalid
-
-    mov rdi, non
-    mov rsi, [rsp + 4]
-    mov rdx, [rsp]
-    call printf
-
     ; add rsp, 4 ; It should point to the last number in stack
-    ; mov rbp, rsp ; We will work with rsp from this part and we want to save where it was!
-    xor rsi, rsi ; I want to save the result in rsi so we should reset it
+    mov rbp, rsp ; We will work with rsp from this part and we want to save where it was!
+    xor rcx, rcx ; I want to save the result in rsi so we should reset it
     jmp function ; Go to the function
 
 back:
     mov rdi, printf_format ; Ready to print
+    mov rsi, rcx
     call printf
     add rsp, 8
+    mov rax, 0 ; The non-error exit code
     ret
 
 
@@ -39,44 +35,41 @@ invalid:
     mov rdi, error ; Address of error message
     call printf 
     add rsp, 8
+    mov rax, 1 ; The non-error exit code
     ret
 
 function:
     ; Load the inputs of function
-    mov ebx, [rbp] ; Load the r into ebx
     add rbp, 4
-    mov eax, [rbp] ; Load the n into eax
+    mov rbx, [rbp] ; Load the r into ebx
     add rbp, 4
+    mov rax, [rbp] ; Load the n into eax
 
-    mov rdi, non
-    mov esi, eax
-    mov edx, ebx
-    call printf
-
-    cmp eax, ebx ; Checking if n = r or n < r
+    cmp rax, rbx ; Checking if n = r or n < r
     je equal
     jl less
-    cmp ebx, 0 ; Checking if r < 0
+    cmp rbx, 0 ; Checking if r < 0
     jl less
 
-    dec eax ; n - 1
-    sub rbp, 4
-    mov [rbp], eax ; C(n - 1,r)
+    dec rax ; n - 1
+    mov [rbp], rax ; C(n - 1,r)
     sub rbp, 4
     mov [rbp], ebx ; C(n - 1,r)
-    dec ebx ; r - 1
     sub rbp, 4
+    dec ebx ; r - 1
     mov [rbp], eax ; C(n - 1,r - 1)
     sub rbp, 4
     mov [rbp], ebx ; C(n - 1,r - 1)
+    sub rbp, 4
 
     jmp end ; Going to the end
 
 equal:
-    inc rsi ; C(n,n) = 1
+    inc rcx ; C(n,n) = 1
     add rbp, 4
     add rbp, 4
     jmp end
+
 less:
     add rbp, 4
     add rbp, 4

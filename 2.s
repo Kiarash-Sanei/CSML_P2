@@ -13,74 +13,60 @@ asm_main:
     call scanf
     
     ; Validate the inputs
-    ; mov rsi, rax
-    ; cmp rax, 0 ; Checking the return value of scanf (that shows number of matchings)
-    ; jne invalid
-    ; add rsp, 4 ; It should point to the last number in stack
-    mov rbp, rsp ; We will work with rsp from this part and we want to save where it was!
-    xor rcx, rcx ; I want to save the result in rsi so we should reset it
+    cmp rax, 2 ; Checking the return value of scanf (that shows number of matchings)
+    jl invalid
+    xor rcx, rcx ; I want to save the result in rcx so we should reset it
     jmp function ; Go to the function
-
-back:
-    mov rdi, printf_format ; Ready to print
-    mov rsi, rcx
+print:
+    mov rdi, printf_format 
+    mov rsi, rcx ; Ready to print
+end:    
     call printf
     add rsp, 8
     mov rax, 0 ; The non-error exit code
     ret
 
-
 invalid:
-    ; Print the error
-    mov rdi, error ; Address of error message
-    call printf 
-    add rsp, 8
-    mov rax, 1 ; The non-error exit code
-    ret
+    mov rdi, error ; Ready to print
+    jmp end
 
 function:
-    ; Load the inputs of function
-    add rbp, 4
-    mov rbx, [rbp] ; Load the r into ebx
-    add rbp, 4
-    mov rax, [rbp] ; Load the n into eax
+    mov rax, [rsp + 4] ; Load n
+    mov rbx, [rsp] ; Load r
+    cmp rax, rbx ; n ? r
+    jne function_normal
+    je equal ; C(n,n) = 1
+    jl less ; C(n,r>n) = 0
+    cmp rbx, 0 ; C(n,r<0) = 0
+back:
+    jmp print
 
-    cmp rax, rbx ; Checking if n = r or n < r
-    je equal
-    jl less
-    cmp rbx, 0 ; Checking if r < 0
-    jl less
-
+function_normal:
     dec rax ; n - 1
-    mov [rbp], rax ; C(n - 1,r)
-    sub rbp, 4
-    mov [rbp], ebx ; C(n - 1,r)
-    sub rbp, 4
-    dec ebx ; r - 1
-    mov [rbp], eax ; C(n - 1,r - 1)
-    sub rbp, 4
-    mov [rbp], ebx ; C(n - 1,r - 1)
-    sub rbp, 4
-
-    jmp end ; Going to the end
+    push rax
+    push rbx
+    jmp function
+    pop rbx
+    dec rbx ; r - 1
+    push rbx 
+    jmp function
+    pop rbx
+    pop rax
+    jmp back
 
 equal:
     inc rcx ; C(n,n) = 1
-    add rbp, 4
-    add rbp, 4
-    jmp end
-
-less:
-    add rbp, 4
-    add rbp, 4
-
-end:
-    cmp rbp, rsp ; If the stack is empty then we have finished
-    jne function ; Recursive call
     jmp back
+less:
+    ; C(n,r>n) = 0
+    jmp back
+zero:
+    ; C(n,r<0) = 0
+    jmp back
+
+
 
 section .data
 scanf_format: db "%d %d", 0 ; Format string for scanf
 printf_format: db "%d", 10, 0 ; Format string for printf
-error: db "input is invalid %d", 10, 0 ; Format string for error
-non: db "%d %d",10,0
+error: db "invalid input", 10, 0 ; Format string for error

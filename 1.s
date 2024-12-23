@@ -40,7 +40,6 @@ back:
     call printf 
 
     add rsp, 8 ; Restore stack alignment
-    mov rax, 0 ; The non-error exit code
     ret ; Return from main
 
 second_ok:
@@ -49,17 +48,24 @@ second_ok:
     and rax, rsi
     jne first
 continue:
-    mov rax, 8
-    and rax, rdi
+    mov rax, 8 ; Sign extetion based on the number's sign
+    and rax, rdx
+    jne second
+continue2:
+    mov rax, 8 ; Sign extetion based on the number's sign
+    and rax, rcx
+    jne third
 end:
     jmp back
 first:
     add rsi, 0xFFFFFFFFFFFFFFF0
     jmp continue
 second:
-    add rdi, 0xFFFFFFFFFFFFFFF0
+    add rdx, 0xFFFFFFFFFFFFFFF0
+    jmp continue2
+third:
+    add rcx, 0xFFFFFFFFFFFFFFF0
     jmp end
-        
 first_ok:
     cmp bh, 's' ; Comparing the second character
     je second_ok 

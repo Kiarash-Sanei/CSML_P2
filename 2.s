@@ -4,84 +4,93 @@ extern scanf
 
 section .text
 asm_main:
-    sub rsp, 8 ; Align stack to 8 bytes (required for function calls)
+    push rbp
+    mov rbp, rsp
+    sub rsp, 32      ; Reserve stack space for local variables and alignment
 
     ; Read input with scanf
-    mov rdi, scanf_format ; Address of scanf format string
-    lea rsi, [rsp + 4] ; Address to store n
-    lea rdx, [rsp] ; Address to store r
+    mov rdi, scanf_format
+    lea rsi, [rbp-8]  ; Address to store n
+    lea rdx, [rbp-16] ; Address to store r
     call scanf
 
     ; Validate the inputs
-    cmp rax, 2 ; Check the return value of scanf
-    jl invalid
-    xor rcx, rcx ; Reset rcx to store the result
-    mov rax, [rsp + 4] ; Load n
-    mov rbx, [rsp] ; Load r
-    push rax
-    push rbx
-    call function ; Go to the function
-    pop rbx
-    pop rax
+    cmp rax, 2        ; Check if scanf read 2 values
+    jl invalid_input
 
-print:
-    mov rdi, printf_format ; Ready to print
-    mov rsi, rcx
-end:
+    ; Initialize parameters for combination calculation
+    mov rax, [rbp-8]  ; Load n
+    mov rbx, [rbp-16] ; Load r
+    xor rcx, rcx      ; Initialize result to 0
+    
+    ; Call recursive function
+    call calculate_combination
+    
+    ; Print result
+    mov rdi, printf_format
+    mov rsi, rcx      ; Move result to second argument
     call printf
-    add rsp, 8
-    mov rax, 0 ; The non-error exit code
-    ret
-
-invalid:
-    mov rdi, error ; Ready to print
     jmp end
 
-function:
-    mov rax, [rsp + 4] ; Load n
-    mov rbx, [rsp] ; Load r
-    cmp rbx, 0
-    jl zero ; C(n, r < 0) = 0
-    cmp rax, rbx
-    jl less ; C(n, r > n) = 0
-    je equal ; C(n, n) = 1
-    ; Recursive case: C(n, r) = C(n - 1, r) + C(n - 1, r - 1)
-    dec rax ; n - 1
-    push rax
-    push rbx
-    call recurse ; Compute C(n - 1, r)
-    pop rbx
-    pop rax
+invalid_input:
+    mov rdi, error_msg
+    call printf
 
-    dec rbx ; r - 1
-    push rax
-    push rbx
-    call recurse ; Compute C(n - 1, r - 1)
-    pop rbx
-    pop rax
-
-back:
+end:
+    mov rsp, rbp
+    pop rbp
+    xor rax, rax      ; Return 0
     ret
 
-recurse:
-    call function
+calculate_combination:
+    ; Preserve registers
+    push rbp
+    mov rbp, rsp
+    push rax
+    push rbx
+    
+    ; Handle base cases
+    cmp rbx, 0        ; Check if r = 0
+    jl zero_case
+    cmp rax, rbx      ; Compare n and r
+    jl zero_case      ; If n < r, return 0
+    je one_case       ; If n = r, return 1
+    
+    ; Recursive case: C(n,r) = C(n-1,r) + C(n-1,r-1)
+    dec rax           ; n-1
+    
+    ; Calculate C(n-1,r)
+    call calculate_combination
+    push rcx          ; Save first result
+    
+    ; Restore n and r, then calculate C(n-1,r-1)
+    mov rax, [rbp-8]  ; Restore original n
+    mov rbx, [rbp-16] ; Restore original r
+    dec rax           ; n-1
+    dec rbx           ; r-1
+    call calculate_combination
+    
+    ; Add results
+    pop rdx           ; Restore first result
+    add rcx, rdx      ; Add both results
+    
+    jmp combination_return
+
+zero_case:
+    xor rcx, rcx      ; Return 0
+    jmp combination_return
+
+one_case:
+    mov rcx, 1        ; Return 1
+
+combination_return:
+    ; Restore registers
+    pop rbx
+    pop rax
+    pop rbp
     ret
-
-equal:
-    inc rcx ; C(n, n) = 1
-    jmp back
-
-less:
-    ; C(n, r > n) = 0
-    jmp back
-
-zero:
-    ; C(n, r < 0) = 0
-    jmp back
-
-
 
 section .data
-scanf_format: db "%d %d", 0 ; Format string for scanf
-printf_format: db "%d", 10, 0 ; Format string for printf
-error: db "invalid input", 10, 0 ; Format string for error
+scanf_format: db "%d %d", 0
+printf_format: db "%d", 10, 0
+error_msg: db "input is invalid", 10, 0
